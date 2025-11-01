@@ -22,7 +22,7 @@ const Board = () => {
     const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null);
     const [strokes, setStrokes] = useState<Stroke[]>([]);
     const [currentColour, setCurrentColour] = useState('hsl(44,53%,74%)');
-    const [id, setID] = useState<Number | null>(null);
+    const [id, setID] = useState<number | null>(null);
     const [recieveblocker, setRecieveBlocker] = useState(false)
 
     const [removedStrokes, setRemovedStrokes] = useState<Stroke[]>([]);
@@ -66,24 +66,23 @@ const Board = () => {
 
     useEffect(() => {
         if (socket) {
-            console.log("eeeeeeeeeeeeeeeeee")
             socket.onopen = () => {
-                console.log("[client] SEND: Connected! eeee");
+                console.log("[client] SENT CONNECT REQ");
                 const msg = JSON.stringify({"type": "connect", "board": params["slug"]})
                 socket.send(msg);
             };
             
             socket.onmessage = (event: MessageEvent) => {
-                console.log("RECIEVED" + JSON.parse(event.data))
                 const received = JSON.parse(event.data)
                 if (received['type'] == "handshake") {
+                    console.log("[client] RECEIVED HANDSHAKE; ID" + received['id'])
                     setID(received['id'])
                 } else {
-                    console.log(strokes, JSON.parse(event.data))
                     if (strokes == JSON.parse(event.data)) return;
+                    console.log("[client] RECIEVED PURGED BOARD")
                     setRecieveBlocker(true)
                     setStrokes(JSON.parse(event.data))
-                    console.log("[client] RERENDERED:", event.data);
+                    console.log("[client] RE-RENDERED");
                 }
             };
         }

@@ -31,10 +31,10 @@ wss.on("connection", (ws) => {  // add the client to the list of clients and boa
     current_board = text["board"]
     wss.clients.forEach(client => {
       if (bds[cts.indexOf(client)] == current_board && client != ws) {  // if the client is ready and they have access to the board
-        console.log(`SENT TO ${cts.indexOf(client)}`)
+        console.log(`[traffic] SENT TO ${cts.indexOf(client)}`)
         client.send(JSON.stringify(text));  // fwd the message
       } else if (client == ws) {
-        console.log(`SUPPRESSED RETURN TO ${cts.indexOf(client)}`)
+        console.log(`[boards] SUPPRESSED RETURN TO SENDER ${cts.indexOf(client)}`)
       };
     });
   });
