@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import ToolBar from './ToolBar';
 
 type Point = {
     x: number;
@@ -111,14 +112,20 @@ const Board = () => {
     }
 
     return (
-        <canvas 
-        ref={canvasRef}        
-        className='cursor-crosshair w-full h-full'
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        />
+        <>
+            <ToolBar 
+            handleRedo={handleRedo}
+            handleUndo={handleUndo}
+            />
+            <canvas 
+            ref={canvasRef}        
+            className='cursor-crosshair w-full h-full'
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            />
+        </>
     )
 }
 
