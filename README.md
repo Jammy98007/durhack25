@@ -2,8 +2,16 @@
 
 ## Todo
 
-- [ ] whiteboard drawing function
-- [ ] storing whiteboard locally 
+### whiteboard drawing function
+- [ ] convert line to proper curve 
+- [ ] tool selection bar 
+- [ ] undo and redo stack 
+- [ ] import and export whiteboard information
+- [ ] home page 
+- [ ] tooltips 
+- [ ] whiteboard sharing UI
+
+## other functions 
 - [ ] multi user whiteboard 
 - [ ] AI / ML take whiteboard and convert to .tex
 
