@@ -7,8 +7,8 @@
 }
 
 :root {
-  --background: #242323;
-  --foreground: #ebebeb;
+  --background: hsl(0,1%,14%);
+  --foreground: hsl(0,0%,92%);
 }
 
 @theme inline {
@@ -16,6 +16,26 @@
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --padding-large: 0.75rem;
+
+  --rounding-large: 0.5rem;
+  --rounding-small: 0.25rem;
+
+  --gap-small: 0.5rem;
+}
+
+@layer utilities {
+  .card {
+    background-color: hsl(0,1%,24%);
+    padding: var(--padding-large);
+    border-radius: var(--rounding-large);
+  }
+
+  .button {
+    border: 2px solid hsl(0,0%,60%);
+    border-radius: var(--rounding-small);
+  }
 }
 
 body {

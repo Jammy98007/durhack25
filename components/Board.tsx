@@ -1,10 +1,16 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import ToolBar from './ToolBar';
 
 type Point = {
     x: number;
     y: number;
+}
+
+type Stroke = {
+    points: Point[];
+    colour: string;
 }
 
 const Board = () => {
@@ -12,10 +18,11 @@ const Board = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     
     const [isDrawing, setIsDrawing] = useState(false);
-    const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
-    const [strokes, setStrokes] = useState<Point[][]>([]);
+    const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null);
+    const [strokes, setStrokes] = useState<Stroke[]>([]);
+    const [currentColour, setCurrentColour] = useState('hsl(44,53%,74%)');
 
-    const [removedStrokes, setRemovedStrokes] = useState<Point[][]>([]);
+    const [removedStrokes, setRemovedStrokes] = useState<Stroke[]>([]);
 
     useEffect(() => {
         // dynamically set the size of the canvas to the container width
@@ -52,14 +59,14 @@ const Board = () => {
         if (!ctx) return;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height) 
-        ctx.strokeStyle = "white";
         ctx.lineWidth = 2;
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
 
         for (const stroke of strokes) {
             ctx.beginPath();
-            stroke.forEach((point, index) => {
+            ctx.strokeStyle = stroke.colour;
+            stroke.points.forEach((point, index) => {
                 if (index === 0) ctx.moveTo(point.x, point.y);
                 else ctx.lineTo(point.x, point.y);
             });
@@ -72,21 +79,26 @@ const Board = () => {
         setIsDrawing(true);
         const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
         const point = { x: e.clientX - rect.left, y: e.clientY - rect.top};
-        setCurrentStroke([point]);
+        setCurrentStroke({points:[point], colour:currentColour});
     }
 
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!isDrawing) return; 
         const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
         const point = { x: e.clientX - rect.left, y: e.clientY - rect.top};
-        setCurrentStroke((prev) => [...prev, point]);
+        setCurrentStroke((prev) => {
+            if (!prev) return null;
+            return {...prev, points: [...prev.points, point] };
+        });
     }
 
     const handleMouseUp = () => { 
         if (!isDrawing) return; 
         setIsDrawing(false);    
-        setStrokes((prev) => [...prev, currentStroke]);
-        setCurrentStroke([]);
+        if (currentStroke) {
+            setStrokes((prev) => [...prev, currentStroke]);
+        }
+        setCurrentStroke(null);
         setRemovedStrokes([]);
     }
 
@@ -110,15 +122,26 @@ const Board = () => {
         })
     }
 
+    const handleChangeColour = (colour: string) => {
+        setCurrentColour(colour);
+    }
+
     return (
-        <canvas 
-        ref={canvasRef}        
-        className='cursor-crosshair w-full h-full'
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        />
+        <>
+            <ToolBar 
+            handleRedo={handleRedo}
+            handleUndo={handleUndo}
+            handleChangeColour={handleChangeColour}
+            />
+            <canvas 
+            ref={canvasRef}        
+            className='cursor-crosshair w-full h-full'
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            />
+        </>
     )
 }
 

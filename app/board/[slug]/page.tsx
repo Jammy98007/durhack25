@@ -9,7 +9,7 @@ const page = () => {
         socket.send("Hello, server!");
     };
 
-    socket.onmessage = (event) => {
+    socket.onmessage = (event: WebSocket.MessageEvent) => {
         console.log("[client] RECIEVED:", event.data);
     };
 
