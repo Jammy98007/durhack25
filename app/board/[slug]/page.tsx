@@ -13,7 +13,7 @@ const page = () => {
         socket.send(JSON.stringify(msg));
     };
 
-    socket.onmessage = (event: WebSocket.MessageEvent) => {
+    socket.onmessage = (event: MessageEvent) => {
         console.log("[client] RECIEVED:", event.data);
     };
 
