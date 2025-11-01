@@ -1,31 +1,24 @@
-'use client'
+'use client';
 
-import Board from '@/components/Board'
-import React from 'react'
-import { useParams } from "next/navigation";
+import { useParams } from 'next/navigation';
+import { useEffect } from 'react';
+import Board from '@/components/Board';
+import { connect } from '@/lib/network';
 
-const page = () => {
-    
-    const socket = new WebSocket("ws://localhost:8080");
-    let msg = {"type": "connect", "board": useParams()["slug"]}
-    socket.onopen = () => {
-        console.log("[client] SEND: Connected! eeee");
-        socket.send(JSON.stringify(msg));
-    };
+const Page = () => {
+  const params = useParams();
+  useEffect(() => {
+        const slug = params?.slug;
+        if (typeof slug === "string") {
+            connect(slug);
+        }
+  }, [params]);
 
-    socket.onmessage = (event: MessageEvent) => {
-        console.log("[client] RECIEVED:", event.data);
-    };
+  return (
+    <div className="w-screen h-screen">
+      <Board />
+    </div>
+  );
+};
 
-    socket.onclose = () => {
-        console.log("[client] DISCONNECTED");
-    };
-
-    return (
-        <div className='w-screen h-screen'>
-            <Board />
-        </div>
-    )
-}
-
-export default page
+export default Page;
