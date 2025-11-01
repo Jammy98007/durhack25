@@ -4,9 +4,10 @@ import React from 'react'
 type ToolBarProps = {
     handleUndo: () => void;
     handleRedo: () => void;
+    handleChangeColour: (colour: string) => void;
 }
 
-const ToolBar = ({ handleUndo, handleRedo }: ToolBarProps) => {
+const ToolBar = ({ handleUndo, handleRedo, handleChangeColour }: ToolBarProps) => {
     const buttons = [
         {
             "text": "undo",
@@ -17,6 +18,26 @@ const ToolBar = ({ handleUndo, handleRedo }: ToolBarProps) => {
             "text": "redo",
             "image": "/icons/redo.svg",
             "onClick": handleRedo,
+        },
+        {
+            "text": "White",
+            "image": "/icons/chalk-white.svg",
+            "onClick": () => handleChangeColour("hsl(44,53%,74%)"),
+        },
+        {
+            "text": "Blue",
+            "image": "/icons/chalk-blue.svg",
+            "onClick": () => handleChangeColour("hsl(195,19%,61%)"),
+        },
+        {
+            "text": "Pink",
+            "image": "/icons/chalk-pink.svg",
+            "onClick": () => handleChangeColour('hsl(320,42%,79%)')
+        },
+        {
+            "text": "Green",
+            "image": "/icons/chalk-green.svg",
+            "onClick": () => handleChangeColour('hsl(108,22%,60%)')
         }
     ]
 
@@ -25,16 +46,22 @@ const ToolBar = ({ handleUndo, handleRedo }: ToolBarProps) => {
             {buttons.map((button, i) => (
                 <div 
                 key={i} 
-                className='button h-12 aspect-square relative cursor-pointer p-[8%]'
+                className='button h-12 aspect-square relative cursor-pointer p-2'
                 onClick={button.onClick}
                 >
-                    <Image 
-                    src={button.image}
-                    width={0}
-                    height={0}
-                    alt={button.text}
-                    className='w-full h-full'
-                    />
+                    {button.image? (
+                        <Image 
+                        src={button.image}
+                        width={0}
+                        height={0}
+                        alt={button.text}
+                        className='w-full h-full'
+                        />
+                    ): (
+                        <div>
+                            {button.text}
+                        </div>
+                    )}
                 </div>
             ))}
         </div>

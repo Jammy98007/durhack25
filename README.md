@@ -4,9 +4,11 @@
 
 ### whiteboard drawing function
 - [ ] convert line to proper curve 
-- [ ] tool selection bar 
+- [x] ~~tool selection bar~~
+- [ ] eraser 
 - [x] ~~undo and redo stack~~ 
 - [ ] import and export whiteboard information
+- [ ] panning on whiteboard
 - [ ] home page 
 - [ ] tooltips 
 - [ ] whiteboard sharing UI
