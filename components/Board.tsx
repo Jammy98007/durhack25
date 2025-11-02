@@ -84,18 +84,22 @@ const Board = () => {
             };
             
             socket.onmessage = (event: MessageEvent) => {
-                const received = JSON.parse(event.data)
-                if (received['type'] == "handshake") {
-                    console.log("[client] RECEIVED HANDSHAKE; ID" + received['id'])
-                    setID(received['id'])
-                } else {
-                    if (strokes == JSON.parse(event.data)) return;
-                    console.log("[client] RECIEVED PURGED BOARD")
-                    setRecieveBlocker(true)
-                    setStrokes(JSON.parse(event.data))
-                    console.log("[client] RE-RENDERED");
+                const received = JSON.parse(event.data);
+
+                if (received.type === "handshake") {
+                    console.log("[client] RECEIVED HANDSHAKE; ID", received.id);
+                    setID(received.id);
+                } 
+                else if (Array.isArray(received)) {
+                    console.log("[client] RECEIVED BOARD ARRAY");
+                    setRecieveBlocker(true);
+                    setStrokes(received);
+                } 
+                else {
+                    console.warn("[client] Ignored non-array message:", received);
                 }
             };
+
         }
     }, [socket]);
     
@@ -238,10 +242,6 @@ const Board = () => {
         setRemovedStrokes([]);
     }
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(fullUrl);
-    }
-
     return (
         <div className='graph-paper'>
             <ToolBar 
@@ -249,11 +249,10 @@ const Board = () => {
             handleUndo={handleUndo}
             handleChangeColour={handleChangeColour}
             handleSetEraser={handleSetEraser}
-            handleCopy={handleCopy}
             />
             <canvas 
             ref={canvasRef}        
-            className='w-full h-full'
+            className='w-screen h-screen'
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
