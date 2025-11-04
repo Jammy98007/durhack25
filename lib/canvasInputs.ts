@@ -48,7 +48,6 @@ const handleMouseUp = ({ isToolDown, setIsToolDown, currentStroke, setStrokes, s
     setIsToolDown(false);
     if (currentStroke) {
         const updatedPoints = simplifyRDP(currentStroke.points, 2.5);
-        console.log(currentStroke.points.length, updatedPoints.length);
         setStrokes((prev) => [...prev, {points: updatedPoints, colour: currentStroke.colour}]);
     }
     setCurrentStroke(null);
