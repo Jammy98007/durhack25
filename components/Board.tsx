@@ -1,42 +1,89 @@
-'use client'
+'use client';
 
+import React, { useEffect, useRef } from 'react';
 import drawToCanvas from '@/lib/canvasDrawing';
 import { handleMouseDown, handleMouseMove, handleMouseUp } from '@/lib/canvasInputs';
 import { Point, Stroke } from '@/types/strokeTypes';
-import React, { useEffect, useRef, useState } from 'react'
 
 const Board = () => {
-    // reference to canvas - applies to html component
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-    // tool information 
-    const [isToolDown, setIsToolDown] = useState(false);
+    // refs for mutable data
+    const strokesRef = useRef<Stroke[]>([]);
+    const currentStrokeRef = useRef<Stroke | null>(null);
+    const panOffsetRef = useRef<Point>({ x: 0, y: 0 });
+    const lastPanOffsetRef = useRef<Point>({ x: 0, y: 0 });
+    const panStartRef = useRef<Point | null>(null);
+    const isDrawingRef = useRef(false);
+    const currentColourRef = useRef('#ffffff');
 
-    // strokes information 
-    const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null);
-    const [strokes, setStrokes] = useState<Stroke[]>([]);
-    const [currentColour, setCurrentColour] = useState('#ffffff')
-
-    // panning informtaion 
-    const [panOffset, setPanOffset] = useState<Point>({ x: 0, y: 0 });
-    const [panStartPoint, setPanStartPoint] = useState<Point | null>(null);
-    const [lastPanOffset, setLastPanOffset] = useState<Point>({ x: 0, y: 0 });
-
+    // animation loop - decoupled from React lifecycle
     useEffect(() => {
-        drawToCanvas({ strokes, currentStroke, canvasRef, panOffset });
-    }, [strokes, currentStroke, panOffset]);
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const render = () => {
+            drawToCanvas({
+                strokes: strokesRef.current,
+                currentStroke: currentStrokeRef.current,
+                canvasRef,
+                panOffset: panOffsetRef.current,
+            });
+
+            const { x, y } = panOffsetRef.current;
+            canvas.style.backgroundPosition = `${x}px ${y}px`;
+
+            requestAnimationFrame(render);
+        };
+        requestAnimationFrame(render);
+    }, []);
+
+    // prevent context menu when right-clicking to pan
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const preventContextMenu = (e: MouseEvent) => e.preventDefault();
+        canvas.addEventListener('contextmenu', preventContextMenu);
+        return () => canvas.removeEventListener('contextmenu', preventContextMenu);
+    }, []);
 
     return (
-        <canvas 
-        ref={canvasRef}
-        className='w-screen h-screen graph-paper'
-        style={{ backgroundPosition: `${panOffset.x}px ${panOffset.y}px` }}
-        onMouseDown={(e) => handleMouseDown({ e, currentColour, setCurrentStroke, setIsToolDown, setPanStartPoint, lastPanOffset })}
-        onMouseMove={(e) => handleMouseMove({ e, setCurrentStroke, isToolDown, panStartPoint, setPanOffset, lastPanOffset, panOffset })}
-        onMouseUp={(e) => handleMouseUp({ e, isToolDown, setIsToolDown, currentStroke, setCurrentStroke, setStrokes, setPanStartPoint, setLastPanOffset, panOffset })}
-        onContextMenu={(e) => e.preventDefault()}
+        <canvas
+            ref={canvasRef}
+            className="w-screen h-screen graph-paper"
+            onMouseDown={(e) =>
+                handleMouseDown({
+                    e,
+                    currentColourRef,
+                    currentStrokeRef,
+                    isDrawingRef,
+                    panStartRef,
+                    lastPanOffsetRef,
+                })
+            }
+            onMouseMove={(e) =>
+                handleMouseMove({
+                    e,
+                    currentStrokeRef,
+                    isDrawingRef,
+                    panStartRef,
+                    panOffsetRef,
+                    lastPanOffsetRef,
+                })
+            }
+            onMouseUp={(e) =>
+                handleMouseUp({
+                    e,
+                    isDrawingRef,
+                    currentStrokeRef,
+                    strokesRef,
+                    panStartRef,
+                    lastPanOffsetRef,
+                    panOffsetRef,
+                })
+            }
         />
-    )
-}
+    );
+};
 
-export default Board
+export default Board;

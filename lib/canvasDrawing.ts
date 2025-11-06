@@ -1,70 +1,57 @@
-import { Point, Stroke } from "@/types/strokeTypes";
+import { Point, Stroke } from '@/types/strokeTypes';
 
-type DrawToCanavsParameters = {
-    strokes: Stroke[],
-    currentStroke: Stroke | null,
-    canvasRef: React.RefObject<HTMLCanvasElement | null>
-    panOffset: Point | null;
-}
+type DrawToCanvasParameters = {
+    strokes: Stroke[];
+    currentStroke: Stroke | null;
+    canvasRef: React.RefObject<HTMLCanvasElement | null>;
+    panOffset: Point;
+};
 
-const drawToCanvas = ({ strokes, currentStroke, canvasRef, panOffset }: DrawToCanavsParameters) => {
-    
-    // get current canvas and context
+const drawToCanvas = ({ strokes, currentStroke, canvasRef, panOffset }: DrawToCanvasParameters) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // set canvas size 
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // match display size
     const { clientWidth, clientHeight } = canvas;
     if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
         canvas.width = clientWidth;
         canvas.height = clientHeight;
     }
 
-    // get canvas context
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // canvas setup 
+    // cear & setup
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.lineWidth = 3;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
 
-    // combine strokes and current stroke
     const allStrokes = currentStroke ? [...strokes, currentStroke] : strokes;
 
-    // add panning offset 
-    const pannedStrokes = panOffset ? allStrokes.map(stroke => ({
-        ...stroke,
-        points: stroke.points.map(p => ({
-            x: p.x + panOffset.x,
-            y: p.y + panOffset.y,
-        }))
-    })) : allStrokes;
-
-    // draw all strokes
-    for (const stroke of pannedStrokes) {
+    // render all strokes with panning offset
+    for (const stroke of allStrokes) {
         if (stroke.points.length < 2) continue;
         ctx.beginPath();
         ctx.strokeStyle = stroke.colour;
-        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        const pts = stroke.points;
+        ctx.moveTo(pts[0].x + panOffset.x, pts[0].y + panOffset.y);
 
-        for (let i = 1; i < stroke.points.length - 2; i++) {
-            const xc = (stroke.points[i].x + stroke.points[i + 1].x) / 2;
-            const yc = (stroke.points[i].y + stroke.points[i + 1].y) / 2;
-            ctx.quadraticCurveTo(stroke.points[i].x, stroke.points[i].y, xc, yc);
+        for (let i = 1; i < pts.length - 2; i++) {
+            const xc = (pts[i].x + pts[i + 1].x) / 2 + panOffset.x;
+            const yc = (pts[i].y + pts[i + 1].y) / 2 + panOffset.y;
+            ctx.quadraticCurveTo(pts[i].x + panOffset.x, pts[i].y + panOffset.y, xc, yc);
         }
 
-        const last = stroke.points.length - 1;
+        const last = pts.length - 1;
         ctx.quadraticCurveTo(
-            stroke.points[last - 1].x,
-            stroke.points[last - 1].y,
-            stroke.points[last].x,
-            stroke.points[last].y
+            pts[last - 1].x + panOffset.x,
+            pts[last - 1].y + panOffset.y,
+            pts[last].x + panOffset.x,
+            pts[last].y + panOffset.y
         );
         ctx.stroke();
     }
-
-}
+};
 
 export default drawToCanvas;

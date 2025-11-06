@@ -1,107 +1,128 @@
 import { Point, Stroke } from '@/types/strokeTypes';
 import { simplifyRDP } from './strokeOptimisation';
+import { RefObject } from 'react';
 
-// ----- Parameter type definitions ----- 
+// --- type definitions ---
 
 type handleMouseDownParameters = {
     e: React.MouseEvent;
-    currentColour: string;
-    setCurrentStroke: (object: Stroke) => void;
-    setIsToolDown: (state: boolean) => void;
-    setPanStartPoint: (point: Point) => void;
-    lastPanOffset: Point;
-}
+    currentColourRef: RefObject<string>;
+    currentStrokeRef: RefObject<Stroke | null>;
+    isDrawingRef: RefObject<boolean>;
+    panStartRef: RefObject<Point | null>;
+    lastPanOffsetRef: RefObject<Point>;
+};
 
 type handleMouseMoveParameters = {
     e: React.MouseEvent;
-    setCurrentStroke: React.Dispatch<React.SetStateAction<Stroke | null>>;
-    isToolDown: boolean;
-    panStartPoint: Point | null;
-    setPanOffset: (point: Point) => void;
-    lastPanOffset: Point;
-    panOffset: Point;
-}
+    currentStrokeRef: RefObject<Stroke | null>;
+    isDrawingRef: RefObject<boolean>;
+    panStartRef: RefObject<Point | null>;
+    panOffsetRef: RefObject<Point>;
+    lastPanOffsetRef: RefObject<Point>;
+};
 
 type handleMouseUpParameters = {
     e: React.MouseEvent;
-    isToolDown: boolean;
-    setIsToolDown: (state: boolean) => void;
-    currentStroke: Stroke | null;
-    setStrokes: React.Dispatch<React.SetStateAction<Stroke[]>>;
-    setCurrentStroke: (object: Stroke | null) => void;
-    setPanStartPoint: (point: Point | null) => void;
-    setLastPanOffset: (point: Point) => void;
-    panOffset: Point;
-}
+    isDrawingRef: RefObject<boolean>;
+    currentStrokeRef: RefObject<Stroke | null>;
+    strokesRef: RefObject<Stroke[]>;
+    panStartRef: RefObject<Point | null>;
+    lastPanOffsetRef: RefObject<Point>;
+    panOffsetRef: RefObject<Point>;
+};
 
-// ----- Function definitions ----- 
+// --- helper ---
 
-const getMouseClickPos = (e: React.MouseEvent) => {
+const getMousePos = (e: React.MouseEvent): Point => {
     const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 };
 
+// --- input handlers ---
 
-const handleMouseDown = ({ e, currentColour, setCurrentStroke, setIsToolDown, setPanStartPoint, lastPanOffset }: handleMouseDownParameters) => {
-    e.preventDefault(); // stop triggering of context menu
-
-    if (e.buttons === 1) { // if left click 
-        setIsToolDown(true);
-        const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-        const point = { x: e.clientX - rect.left - lastPanOffset.x, y: e.clientY - rect.top - lastPanOffset.y };
-        setCurrentStroke({ points: [point], colour: currentColour });
-        return;
-    } 
-    if (e.buttons === 2) { // if right click 
-        const point = getMouseClickPos(e);
-        setPanStartPoint(point);
-        return;
-    }
-}
-
-const handleMouseMove = ({ e, setCurrentStroke, isToolDown, panStartPoint, setPanOffset, lastPanOffset }: handleMouseMoveParameters) => {
+export const handleMouseDown = ({
+    e,
+    currentColourRef,
+    currentStrokeRef,
+    isDrawingRef,
+    panStartRef,
+    lastPanOffsetRef,
+}: handleMouseDownParameters) => {
     e.preventDefault();
 
-    // Drawing (left mouse)
-    if (e.buttons === 1 && isToolDown) {
-        const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-        const point = { x: e.clientX - rect.left - lastPanOffset.x, y: e.clientY - rect.top - lastPanOffset.y };
-        setCurrentStroke(prev => prev ? { ...prev, points: [...prev.points, point] } : null);
-        return;
+    if (e.buttons === 1) {
+        // left click: start drawing
+        isDrawingRef.current = true;
+        const { x, y } = getMousePos(e);
+        currentStrokeRef.current = {
+            points: [{ x: x - lastPanOffsetRef.current.x, y: y - lastPanOffsetRef.current.y }],
+            colour: currentColourRef.current,
+        };
     }
 
-    // Panning (right mouse)
-    if (e.buttons === 2 && panStartPoint) {
-        const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-        const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-        const offset = {
-            x: lastPanOffset.x + (point.x - panStartPoint.x),
-            y: lastPanOffset.y + (point.y - panStartPoint.y),
-        };
-        setPanOffset(offset);
-        return;
+    if (e.buttons === 2) {
+        // right click: start panning
+        panStartRef.current = getMousePos(e);
     }
 };
 
-const handleMouseUp = ({ e, isToolDown, setIsToolDown, currentStroke, setStrokes, setCurrentStroke, setPanStartPoint, setLastPanOffset, panOffset }: handleMouseUpParameters) => {
-    if (e.button === 0 && isToolDown) {
-        setIsToolDown(false);
-        if (currentStroke) {
-            const updatedPoints = simplifyRDP(currentStroke.points, 1.5);
-            console.log(`Before: ${currentStroke.points.length}, After: ${updatedPoints.length}`)
-            setStrokes((prev) => [...prev, {points: updatedPoints, colour: currentStroke.colour}]);
+export const handleMouseMove = (() => {
+    let lastTime = 0;
+    const THROTTLE_MS = 16; // 60 FPS
+    return ({
+        e,
+        currentStrokeRef,
+        isDrawingRef,
+        panStartRef,
+        panOffsetRef,
+        lastPanOffsetRef,
+    }: handleMouseMoveParameters) => {
+        const now = performance.now();
+        if (now - lastTime < THROTTLE_MS) return;
+        lastTime = now;
+
+        if (e.buttons === 1 && isDrawingRef.current && currentStrokeRef.current) {
+            const { x, y } = getMousePos(e);
+            currentStrokeRef.current.points.push({
+                x: x - lastPanOffsetRef.current.x,
+                y: y - lastPanOffsetRef.current.y,
+            });
         }
-        setCurrentStroke(null);
-        return;
+
+        if (e.buttons === 2 && panStartRef.current) {
+            const { x, y } = getMousePos(e);
+            panOffsetRef.current = {
+                x: lastPanOffsetRef.current.x + (x - panStartRef.current.x),
+                y: lastPanOffsetRef.current.y + (y - panStartRef.current.y),
+            };
+        }
+    };
+})();
+
+export const handleMouseUp = ({
+    e,
+    isDrawingRef,
+    currentStrokeRef,
+    strokesRef,
+    panStartRef,
+    lastPanOffsetRef,
+    panOffsetRef,
+}: handleMouseUpParameters) => {
+    if (e.button === 0 && isDrawingRef.current) {
+        isDrawingRef.current = false;
+        if (currentStrokeRef.current) {
+            const simplified = simplifyRDP(currentStrokeRef.current.points, 2.5);
+            strokesRef.current.push({
+                points: simplified,
+                colour: currentStrokeRef.current.colour,
+            });
+            currentStrokeRef.current = null;
+        }
     }
 
     if (e.button === 2) {
-        setLastPanOffset(panOffset);
-        setPanStartPoint(null);
-        return;
+        panStartRef.current = null;
+        lastPanOffsetRef.current = { ...panOffsetRef.current };
     }
-}
-
-// ----- function exports ----- 
-
-export { handleMouseDown, handleMouseMove, handleMouseUp };
+};
